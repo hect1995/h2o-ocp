@@ -1,0 +1,34 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: h2o-instance
+  annotations:
+    description: Template to deploy a H2O instance on OCP.
+    tags: h2o,instance
+    iconClass: icon-h20
+    openshift.io/provider-display-name: Red Hat, Inc.
+    openshift.io/support-url: https://access.redhat.com
+objects:
+- apiVersion: h2o.ai/v1beta
+  kind: H2O
+  metadata:
+    name: ${APPLICATION_NAME}
+    namespace: ${OPERATOR_NAMESPACE}
+  spec:
+    nodes: 1
+    resources:
+      cpu: 2
+      memory: 2Gi
+      memoryPercentage: 90
+    customImage:
+      image: >-
+        registry.connect.redhat.com/h2oai/h2o@sha256:62500ca14adacd1164d7ef4f64ccc96c3d0ad90ddf29c3e02d1aa82bd42aa1a4
+parameters:
+- name: APPLICATION_NAME
+  description: "The H2O application name."
+  required: false
+  value: "h2o-test"
+- name: OPERATOR_NAMESPACE
+  description: "The project where the operator will be installed."
+  required: false
+  value: "h2o-operator1"

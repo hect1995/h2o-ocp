@@ -1,0 +1,53 @@
+apiVersion: template.openshift.io/v1
+kind: Template
+metadata:
+  name: h2o-operator
+  annotations:
+    description: Template to deploy a H2O operator on OCP.
+    tags: h2o,operator
+    iconClass: icon-h20
+    openshift.io/provider-display-name: Red Hat, Inc.
+    openshift.io/support-url: https://access.redhat.com
+objects:
+- apiVersion: project.openshift.io/v1
+  kind: Project
+  metadata:
+    name: ${OPERATOR_NAMESPACE}
+    annotations:
+      openshift.io/description: "This project contains all the resources related to the operator of H2O"
+      openshift.io/display-name: "H2O - Operator"
+- apiVersion: project.openshift.io/v1
+  kind: Project
+  metadata:
+    name: ${CLUSTER_NAMESPACE}
+    annotations:
+      openshift.io/description: "This project contains all the clusters deployed of H2O"
+      openshift.io/display-name: "H2O"
+- apiVersion: operators.coreos.com/v1
+  kind: OperatorGroup
+  metadata:
+    name: h2oai
+    namespace: ${OPERATOR_NAMESPACE}
+  spec:
+    targetNamespaces:
+      - ${OPERATOR_NAMESPACE}
+- apiVersion: operators.coreos.com/v1alpha1
+  kind: Subscription
+  metadata:
+    name: h2o-operator
+    namespace: ${OPERATOR_NAMESPACE}
+  spec:
+    channel: beta
+    installPlanApproval: Automatic 
+    name: h2o-operator
+    source: certified-operators
+    sourceNamespace: openshift-marketplace
+parameters:
+- name: OPERATOR_NAMESPACE
+  description: "The project where the operator will be installed."
+  required: false
+  value: "h2o-operator1"
+- name: CLUSTER_NAMESPACE
+  description: "The project where the H2O cluster will be installed."
+  required: false
+  value: "h2o"
