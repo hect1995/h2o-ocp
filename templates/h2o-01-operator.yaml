@@ -16,13 +16,6 @@ objects:
     annotations:
       openshift.io/description: "This project contains all the resources related to the operator of H2O"
       openshift.io/display-name: "H2O - Operator"
-- apiVersion: project.openshift.io/v1
-  kind: Project
-  metadata:
-    name: ${CLUSTER_NAMESPACE}
-    annotations:
-      openshift.io/description: "This project contains all the clusters deployed of H2O"
-      openshift.io/display-name: "H2O"
 - apiVersion: operators.coreos.com/v1
   kind: OperatorGroup
   metadata:
