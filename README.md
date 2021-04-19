@@ -120,7 +120,7 @@ By executing `oc get routes` we can copy the route create it and access the GUI 
 ## Monitoring
 A typical OpenShift monitoring stack includes Prometheus for monitoring both systems and services, and Grafana for analyzing and visualizing metrics.
 
-Administrators are often looking to write custom queries and create custom dashboards in Grafana. However, Grafana instances provided with the monitoring stack (and its dashboards) are read-only. To solve this problem, we can use the community-powered Grafana operator provided by OperatorHub. An implementation is accurately explained here[https://github.com/alvarolop/rhdg8-server#4-monitoring-rhdg-with-grafana].
+Administrators are often looking to write custom queries and create custom dashboards in Grafana. However, Grafana instances provided with the monitoring stack (and its dashboards) are read-only. To solve this problem, we can use the community-powered Grafana operator provided by OperatorHub. An implementation is accurately explained [here](https://github.com/alvarolop/rhdg8-server#4-monitoring-rhdg-with-grafana).
 For the sake of simplicity I am just going to use the default read-only dashboard from Grafana. 
 The Grafana instance is deployed in the `openshift-monitoring` project, so to find its route we need to:
 
