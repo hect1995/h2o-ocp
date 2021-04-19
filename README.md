@@ -1,4 +1,4 @@
-# h2o-ocp
+# H2O Operator Openshift 4
 This repo depicts a simple example on how to deploy a H2o instance into an Openshift 4 cluster.
 
 The first step is to define the `OperatorGroup`, which selects target namespaces in which to generate required RBAC access for its member Operators, and a `Subscription` to subscribe a namespace to an Operator. The `h2o-01-operator.yaml` template does all that:
