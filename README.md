@@ -4,14 +4,15 @@ This repo depicts a simple example on how to deploy a H2o instance into an Opens
 The first step is to define the `OperatorGroup`, which selects target namespaces in which to generate required RBAC access for its member Operators, and a `Subscription` to subscribe a namespace to an Operator. The `h2o-01-operator.yaml` template does all that:
 
 ```sh
-$ oc process -f templates/h2o-01-operator.yaml | oc apply -f -
+OPERATOR_NAMESPACE=h2o-opertaor # Define the namespace
+$ oc process -f templates/h2o-01-operator.yaml -p OPERATOR_NAMESPACE=${OPERATOR_NAMESPACE} | oc apply -f -
 ```
 
 At this point, OLM is now aware of the selected Operator. A cluster service version (CSV) for the Operator should appear in the target namespace, and APIs provided by the Operator should be available for creation.
 Let's check it:
 
 ```sh
-$ oc get crd | grep "h2o"
+$ oc get crd -n ${OPERATOR_NAMESPACE}| grep "h2o"
 h2os.h2o.ai                                                       2021-04-19T11:32:49Z
 
 $ oc describe crd h2os.h2o.ai
@@ -106,13 +107,13 @@ Status:
 Now, a CR of kind `H2O` can be deployed into the namespace:
 
 ```sh
-$ oc process -f templates/h2o-02-instance.yaml | oc apply -f -
+$ oc process -f templates/h2o-02-instance.yaml -p OPERATOR_NAMESPACE=${OPERATOR_NAMESPACE} | oc apply -f -
 ```
 
 Once the instance is deployed, a `route` needs to be created to expose the service(`svc`)
 
 ```sh
-$ oc expose svc/h2o-test
+$ oc expose svc/h2o-test -n ${OPERATOR_NAMESPACE}
 ```
 
 By executing `oc get routes` we can copy the route create it and access the GUI of H2o in our desired navigation explorer.
@@ -120,13 +121,35 @@ By executing `oc get routes` we can copy the route create it and access the GUI 
 ## Monitoring
 A typical OpenShift monitoring stack includes Prometheus for monitoring both systems and services, and Grafana for analyzing and visualizing metrics.
 
-Administrators are often looking to write custom queries and create custom dashboards in Grafana. However, Grafana instances provided with the monitoring stack (and its dashboards) are read-only. To solve this problem, we can use the community-powered Grafana operator provided by OperatorHub. An implementation is accurately explained [here](https://github.com/alvarolop/rhdg8-server#4-monitoring-rhdg-with-grafana).
-For the sake of simplicity I am just going to use the default read-only dashboard from Grafana. 
-The Grafana instance is deployed in the `openshift-monitoring` project, so to find its route we need to:
+Administrators are often looking to write custom queries and create custom dashboards in Grafana. However, Grafana instances provided with the monitoring stack (and its dashboards) are read-only. To solve this problem, we can use the community-powered Grafana operator provided by OperatorHub. I will follow the implementation accurately explained [here](https://github.com/alvarolop/rhdg8-server#4-monitoring-rhdg-with-grafana).
+
+As with the H2O operator, we first need to subscribe and deploy the operator using the following template:
 
 ```sh
-$ oc get routes -n openshift-monitoring | grep grafana
-grafana             grafana-openshift-monitoring.apps.apps.sandbox1684.opentlc.com                    grafana             https   reencrypt/Redirect  None
+OPERATOR_NAMESPACE="grafana"
+$ oc process -f templates/grafana-01-operator.yaml -p OPERATOR_NAMESPACE=${OPERATOR_NAMESPACE}| oc apply -f -
 ```
 
+Now, a Grafana instance is created using the operator:
 
+```sh
+oc process -f templates/grafana-02-instance.yaml -p OPERATOR_NAMESPACE=${OPERATOR_NAMESPACE}| oc apply -f
+```
+
+A `GrafanaDataSource`, that points to the Prometheus metrics, is created:
+
+```sh
+oc adm policy add-cluster-role-to-user cluster-monitoring-view -z grafana-serviceaccount -n ${OPERATOR_NAMESPACE}
+BEARER_TOKEN=$(oc serviceaccounts get-token grafana-serviceaccount -n ${OPERATOR_NAMESPACE})
+oc process -f templates/grafana-03-datasource.yaml -p BEARER_TOKEN=${BEARER_TOKEN} | oc apply -f -
+```
+
+And finally the Grafana dashboard is to be created:
+
+```sh
+DASHBOARD_NAME="grafana-dashboard-h2o"
+# Create a configMap containing the Dashboard
+oc create configmap $DASHBOARD_NAME --from-file=dashboard=grafana/$DASHBOARD_NAME.json -n ${OPERATOR_NAMESPACE}
+# Create a Dashboard object that automatically updates Grafana
+oc process -f templates/grafana-04-dashboard.yaml -p DASHBOARD_NAME=$DASHBOARD_NAME | oc apply -f -
+```
