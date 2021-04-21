@@ -220,6 +220,10 @@ Moreover, We can configure the Alertmanager through the Openshift 4 platform, in
 
 image::ocp_alertmanager_gui.png[]
 
+If everything works as expected the receiver should receive notifications like the following one:
+
+image::alert_manager_notification.png[]
+
 === References
 
 - https://github.com/samuelvl/ocp4-upi-baremetal-lab/tree/master/day-two/04-monitoring#alertmanager
