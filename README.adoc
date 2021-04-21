@@ -21,14 +21,12 @@ ifndef::env-github[]
 endif::[]
 // End: Enable admonition icons
 
-This repository demonstrates some of the basic features of Red Hat's latest Data Grid release and how to deploy a Data Grid cluster on OCP and RHEL. 
+This repository demonstrates some of the basic features of deploying a H2O operator on OCP4 and the use of the Monitoring stack. 
 
 // Create the Table of contents here
 toc::[]
 
 == Launch H2O
-
-This repo depicts a simple example on how to deploy a H2o instance into an Openshift 4 cluster.
 
 The first step is to define the `OperatorGroup`, which selects target namespaces in which to generate required RBAC access for its member Operators, and a `Subscription` to subscribe a namespace to an Operator. The `h2o-01-operator.yaml` template does all that:
 
