@@ -21,7 +21,7 @@ ifndef::env-github[]
 endif::[]
 // End: Enable admonition icons
 
-This repository demonstrates some of the basic features of deploying a H2O operator on OCP4 and the use of the Monitoring stack. 
+This repository demonstrates some of the basic features and lifecycle of __operators__. More concretelly, a H2O operator is to be deployed on OCP4 and the Monitoring stack is used to get metrics and send alerts. Finally it will be explained how to delete the project. 
 
 // Create the Table of contents here
 toc::[]
@@ -112,7 +112,7 @@ The `h2o-01-operator.yaml` template creates the `OperatorGroup` to its own names
 
 [source, bash]
 ----
-OPERATOR_NAMESPACE=h2o-opertaor # Define the namespace
+OPERATOR_NAMESPACE=h2o-operator # Define the namespace
 $ oc process -f templates/h2o-01-operator.yaml -p OPERATOR_NAMESPACE=${OPERATOR_NAMESPACE} | oc apply -f -
 ----
 
@@ -311,3 +311,105 @@ image::alert_manager_notification.png[]
 
 - https://github.com/samuelvl/ocp4-upi-baremetal-lab/tree/master/day-two/04-monitoring#alertmanager
 - https://grafana.com/blog/2020/02/25/step-by-step-guide-to-setting-up-prometheus-alertmanager-with-slack-pagerduty-and-gmail/
+
+== Delete a namespace
+
+Once we want to remove a namespace, it is recommended to remove all the object in that namespace before removing the namespace.
+
+[source, bash]
+----
+$ oc get all -n h2o-operator
+NAME                               READY   STATUS    RESTARTS   AGE
+pod/h2o-operator-6c9cbdc57-m4n7v   1/1     Running   0          2m30s
+pod/h2o-test-0                     1/1     Running   0          2m18s
+
+NAME               TYPE        CLUSTER-IP   EXTERNAL-IP   PORT(S)   AGE
+service/h2o-test   ClusterIP   None         <none>        80/TCP    2m18s
+
+NAME                           READY   UP-TO-DATE   AVAILABLE   AGE
+deployment.apps/h2o-operator   1/1     1            1           2m30s
+
+NAME                                     DESIRED   CURRENT   READY   AGE
+replicaset.apps/h2o-operator-6c9cbdc57   1         1         1       2m30s
+
+NAME                        READY   AGE
+statefulset.apps/h2o-test   1/1     2m18s
+
+NAME                                HOST/PORT                                                 PATH   SERVICES   PORT    TERMINATION   WILDCARD
+route.route.openshift.io/h2o-test   h2o-test-h2o-operator.apps.apps.sandbox1684.opentlc.com          h2o-test   54321                 None
+
+$
+----
+
+Making use of `labels` one can remove all objects with a specific label. 
+Nevertheless in this section I am going to focus on how to force the deletion of the namespace if things go wrong, let's do it:
+
+[source, bash]
+----
+$ oc project default # leave the project we want to delete
+$ oc delete project h2o-operator
+project.project.openshift.io "h2o-operator" deleted
+
+$ oc get all -n h2o-operator
+No resources found in h2o-operator namespace.
+
+$ oc get project
+NAME                                               DISPLAY NAME         STATUS
+default                                                                 Active
+grafana                                            Grafana - Operator   Active
+h2o-operator                                       H2O - Operator       Terminating
+
+----
+
+Mmmmmm... even though there are no longer objects in the namespace, it gets stuck in the `Terminating` state.
+If we dig deeper, we find that the `H2O` instace cannot be deleted.
+
+[source, bash]
+----
+$ oc get H2O -n h2o-operator
+NAME       AGE
+h2o-test   98m
+----
+
+Following this, we need to remove the value in `finalizers` to force the deletion of the instance: 
+
+[source, bash]
+----
+$ oc edit H2O h2o-test -n h2o-operator
+Name:         h2o-test
+Namespace:    h2o-operator
+Labels:       <none>
+Annotations:  <none>
+API Version:  h2o.ai/v1beta
+...
+Metadata:
+  Creation Timestamp:             2021-04-22T14:48:36Z
+  Deletion Grace Period Seconds:  0
+  Deletion Timestamp:             2021-04-22T16:24:24Z
+  Finalizers:
+    h2os.h2o.ai # remove this line
+...
+----
+
+Now, checking back again for the `H2O` instance and the projects:
+[source, bash]
+----
+$ oc get H2O -n h2o-operator
+No resources found in h2o-operator namespace.
+
+$ oc get project
+NAME                                               DISPLAY NAME         STATUS
+default                                                                 Active
+grafana                                            Grafana - Operator   Active
+kube-node-lease                                                         Active
+kube-public                                                             Active
+
+----
+
+We made it!!
+
+=== References
+
+- https://kubernetes.io/docs/tasks/run-application/force-delete-stateful-set-pod/
+
+
