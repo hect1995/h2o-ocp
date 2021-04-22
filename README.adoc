@@ -171,7 +171,7 @@ Now, a Grafana instance is created using the operator:
 
 [source, bash]
 ----
-oc process -f templates/grafana-02-instance.yaml -p OPERATOR_NAMESPACE=${OPERATOR_NAMESPACE}| oc apply -f
+oc process -f templates/grafana-02-instance.yaml -p OPERATOR_NAMESPACE=${OPERATOR_NAMESPACE}| oc apply -f -
 ----
 
 A `GrafanaDataSource`, that points to the Prometheus metrics, is created:
