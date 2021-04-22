@@ -28,7 +28,87 @@ toc::[]
 
 == Launch H2O
 
-The first step is to define the `OperatorGroup`, which selects target namespaces in which to generate required RBAC access for its member Operators, and a `Subscription` to subscribe a namespace to an Operator. The `h2o-01-operator.yaml` template does all that:
+=== Introduction
+
+The first step is to define the `OperatorGroup`, which selects target namespaces in which to generate required RBAC access for its member Operators, and a `Subscription` to subscribe a namespace to an Operator. +
+The list of Operators available to the cluster from the OperatorHub can be found by:
+[source, bash]
+----
+$ oc get packagemanifests -n openshift-marketplace
+NAME                                                 CATALOG               AGE
+fuse-console                                         Red Hat Operators     20h
+percona-xtradb-cluster-operator-certified-rhmp       Red Hat Marketplace   20h
+neuvector-community-operator                         Community Operators   20h
+federatorai-certified                                Certified Operators   20h
+apicast-operator                                     Red Hat Operators     20h
+atlasmap-operator                                    Community Operators   20h
+aws-event-sources-operator-certified                 Certified Operators   20h
+aws-efs-operator                                     Community Operators   20h
+k10-kasten-operator                                  Certified Operators   20h
+...
+
+$ oc get packagemanifests -n openshift-marketplace | grep h2o
+h2o-operator                                         Certified Operators   20h
+----
+
+Before installing the operator we need to check what are the `Install Modes` available and the `CRDs` that will be generated: 
+
+[source, bash]
+----
+$ oc describe packagemanifests h2o-operator -n openshift-marketplace
+Name:         h2o-operator
+Namespace:    openshift-marketplace
+Labels:       catalog=certified-operators
+...
+Status:
+  Catalog Source:               certified-operators
+  Catalog Source Display Name:  Certified Operators
+  Catalog Source Namespace:     openshift-marketplace
+  Catalog Source Publisher:     Red Hat
+  Channels:
+    Current CSV:  h2o-operator.v0.1.0
+    Current CSV Desc:
+      Annotations:
+        Alm - Examples:   [{"apiVersion":"h2o.ai/v1beta","kind":"H2O","metadata":{"name":"h2o-test"},"spec":{"nodes":1,"resources":{"cpu":1,"memory":"256Mi","memoryPercentage":90},"customImage":{"image":"registry.connect.redhat.com/h2oai/h2o@sha256:62500ca14adacd1164d7ef4f64ccc96c3d0ad90ddf29c3e02d1aa82bd42aa1a4"}}}]
+        Capabilities:     Basic Install
+        Categories:       AI/Machine Learning
+        Certified:        true
+        Container Image:  registry.connect.redhat.com/h2oai/h2o-operator@sha256:5dca5476c060b49cfc3e1e13b2c3c92920ae8789a092169a2c8457211895298d
+        Created At:       2021-02-09T11:00:58UTC
+        Description:      A Kubernetes operator for H2O  Open Source, Distributed, Fast & Scalable Machine Learning Platform.
+        Repository:       https://github.com/h2oai/h2o-kubernetes
+        Support:          H2O.ai
+      Apiservicedefinitions:
+      Customresourcedefinitions:
+        Owned:
+          Description:   H2O
+          Display Name:  H2O
+          Kind:          H2O
+          Name:          h2os.h2o.ai
+          Version:       v1beta
+      Description: ...
+            Display Name:  H2O Open Source Machine Learning Operator
+      Install Modes:
+        Supported:  true
+        Type:       OwnNamespace
+        Supported:  true
+        Type:       SingleNamespace
+        Supported:  true
+        Type:       MultiNamespace
+        Supported:  false
+        Type:       AllNamespaces
+      ...             
+----
+
+An Operator is considered a member of an OperatorGroup if the following conditions are true:
+
+* The Operator’s CSV exists in the same namespace as the OperatorGroup.
+
+* The Operator’s CSV’s InstallModes support the set of namespaces targeted by the OperatorGroup.
+
+=== Deploy the operator
+
+The `h2o-01-operator.yaml` template creates the `OperatorGroup` to its own namespace and subscribes to the `h2o-operator`:
 
 [source, bash]
 ----
@@ -133,6 +213,8 @@ Status:
     v1beta
 ----
 
+=== Deploy and expose an H2O instance
+
 Now, a CR of kind `H2O` can be deployed into the namespace:
 
 [source, bash]
@@ -151,6 +233,7 @@ By executing `oc get routes` we can copy the route create it and access the GUI 
 
 === References
 
+- https://docs.openshift.com/container-platform/4.1/applications/operators/olm-understanding-olm.html#olm-operatorgroups-membership_olm-understanding-olm
 - https://www.h2o.ai/blog/accelerate-machine-learning-workflows-with-h2o-ai-driverless-ai-on-red-hat-openshift-enterprise-kubernetes-platform/
 
 
